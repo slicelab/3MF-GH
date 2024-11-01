@@ -1,5 +1,4 @@
 // Grasshopper Script Instance
-// Slicelab
 #region Usings
 using System;
 using System.Linq;
