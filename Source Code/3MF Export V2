@@ -1,0 +1,112 @@
+// Grasshopper Script Instance
+#region Usings
+using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using System.Drawing;
+
+using Rhino;
+using Rhino.Geometry;
+using Rhino.DocObjects;
+using Rhino.FileIO;
+using System.IO;
+using Rhino.Collections;
+
+using Grasshopper;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
+#endregion
+
+public class Script_Instance : GH_ScriptInstance
+{
+    #region Notes
+    /* 
+      Members:
+        RhinoDoc RhinoDocument
+        GH_Document GrasshopperDocument
+        IGH_Component Component
+        int Iteration
+
+      Methods (Virtual & overridable):
+        Print(string text)
+        Print(string format, params object[] args)
+        Reflect(object obj)
+        Reflect(object obj, string method_name)
+    */
+    #endregion
+
+    private void RunScript(
+	Mesh mesh,
+	string fileName,
+	string folderPath,
+	string title,
+	string designer,
+	string description,
+	string license,
+	string rating,
+	string copyright,
+	bool export,
+	bool move,
+	ref object A)
+    {
+        if (!export)
+        {
+            A = "Export not triggered.";
+            return;
+        }
+
+        if (mesh == null || !mesh.IsValid)
+        {
+            A = "No mesh provided or mesh is invalid.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(folderPath) || string.IsNullOrWhiteSpace(fileName))
+        {
+            A = "Folder path or file name not provided.";
+            return;
+        }
+
+        // Ensure the folder exists
+        Directory.CreateDirectory(folderPath);
+
+        // Ensure the file name ends with ".3mf"
+        if (!fileName.EndsWith(".3mf", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName += ".3mf";
+        }
+
+        string fullPath = Path.Combine(folderPath, fileName);
+
+      // Prepare the options as an ArchivableDictionary
+        ArchivableDictionary optionsDictionary = new ArchivableDictionary();
+        optionsDictionary.Set("Title", title);
+        optionsDictionary.Set("Designer", designer);
+        optionsDictionary.Set("Description", description);
+        optionsDictionary.Set("Copyright", copyright);
+        optionsDictionary.Set("LicenseTerms", license);
+        optionsDictionary.Set("Rating", rating);
+        optionsDictionary.Set("MoveOutputToPositiveXYZOctant", move);
+    
+
+        // Use the dictionary with the Export method
+        using (var doc = RhinoDoc.CreateHeadless(null))
+        {
+            doc.Objects.AddMesh(mesh); // Add mesh to temporary document
+            doc.Views.Redraw();
+
+            bool success = doc.Export(fullPath, optionsDictionary); // Use the correct Export overload
+            if (success)
+            {
+                A = "Successfully exported 3MF file to: " + fullPath;
+            }
+            else
+            {
+                A = "Failed to export 3MF file.";
+            }
+        }
+
+    }
+}
